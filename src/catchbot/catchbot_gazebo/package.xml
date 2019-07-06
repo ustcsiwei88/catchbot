@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<package>
+	<name>catchbot_gazebo</name>
+	<version>1.0.0</version>
+	<description>
+		catchbot in Gazebo
+	</description>
+
+	<maintainer email="ustcsiwei88@gmail.com">Siwei Feng</maintainer>
+	<license>MIT</license>
+</package>

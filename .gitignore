@@ -11,6 +11,7 @@ __pycache__/
 build/
 develop-eggs/
 dist/
+devel/
 downloads/
 eggs/
 .eggs/
@@ -102,3 +103,6 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+
+#catkin
+.catkin_workspace

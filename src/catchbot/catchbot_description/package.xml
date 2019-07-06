@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<package>
+	<name>catchbot_description</name>
+	<version>1.0.0</version>
+	<maintainer email="ustcsiwei88@gmail.com">Siwei Feng</maintainer>
+	<description>
+		URDF description for UR5e robotics arm with Robotiq 2f 85mm gripper
+	</description>
+	<license>MIT</license>
+</package>
