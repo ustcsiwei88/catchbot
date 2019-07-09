@@ -3,7 +3,7 @@
 
 #include <math.h>
 #include <stdio.h>
-#include <ur_kinematics/ur_kin.h>
+// #include <ur_kinematics/ur_kin.h>
 
 namespace ur5ekin{
   const double ZERO_THRESH = 0.00000001;
