@@ -10,7 +10,13 @@ import random
 import rospkg 
 
 rospack = rospkg.RosPack()
-
+def logical_cam():
+	pub = rospy.Publisher('/catchbot/logical_cam', ModelState, queue_size=10)
+	rate = rospy.Rate(50)
+	while not rospy.is_shutdown():
+		# TODO: CREATE MODELSTATE ARRAY
+		pass
+	
 if __name__ == '__main__':
 	rospy.init_node('catchbot_setup')
 	rospy.wait_for_service('/gazebo/delete_model')
@@ -31,6 +37,7 @@ if __name__ == '__main__':
 		time.sleep(0.4)
 		set_model_state(ModelState('ball_'+str(i), Pose(Point(x=x,y=y,z=z), orient ), Twist(Vector3(2, 0, 4),Vector3(0,0,0)), "world"))
 		time.sleep(0.6)
+	# logical_cam()
 	for i in range(10):
 		model_name='ball_'+str(i)
 		delete_model(str(model_name))
