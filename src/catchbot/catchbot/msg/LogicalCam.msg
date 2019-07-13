@@ -1,3 +1,4 @@
 # message from faked camera
-Model[] models
-geometry_msgs/Pose pose
+time timestamp
+geometry_msgs/Point[] ball_positions
+# geometry_msgs/Pose pose
