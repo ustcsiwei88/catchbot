@@ -8,6 +8,7 @@ find_package(catkin REQUIRED COMPONENTS
 	geometry_msgs
 	std_msgs
 	message_generation
+	control_msgs
 	trajectory_msgs)
 add_message_files(
 	FILES

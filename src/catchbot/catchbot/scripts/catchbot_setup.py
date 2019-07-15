@@ -55,17 +55,23 @@ def model_states_callback(data):
 def main():
 	f = open(os.path.join(rospack.get_path("catchbot"), 'models/ball/model.sdf'))
 	sdff = f.read()
-	for i in range(10):
-		x = -2+random.uniform(0,0.1)
-		y = random.uniform(0,0.1)
-		z = random.uniform(0,0.1)
+	NUM=10
+	for i in range(NUM):
+		print "throwing ball %d"%(i)
+		x = -3+random.uniform(0,0.1)
+		y = random.uniform(-0.1,0.1)
+		# z = random.uniform(0,0.1)
+		z = 0.01
 		spawn_model('ball_'+str(i), sdff, "", Pose(Point(x=x,y=y,z=z), orient ), "world")
-		time.sleep(0.4)
+		# time.sleep(0.4)
 		set_model_state(ModelState('ball_'+str(i), Pose(Point(x=x,y=y,z=z), orient ), Twist(Vector3(2, 0, 7),Vector3(0,0,0)), "world"))
-		time.sleep(0.6)
-	for i in range(10):
-		model_name='ball_' + str(i)
-		delete_model(str(model_name))
+		time.sleep(6)
+		delete_model('ball_'+str(i))
+		time.sleep(3)
+	rospy.signal_shutdown("Fininshed Throwing")
+	# for i in range(NUM):
+	# 	model_name='ball_' + str(i)
+	# 	delete_model(str(model_name))
 
 if __name__ == '__main__':
 	rospy.init_node('catchbot_setup')

@@ -5,7 +5,7 @@
 #include <stdio.h>
 // #include <ur_kinematics/ur_kin.h>
 
-namespace ur5ekin{
+// namespace ur5ekin{
   const double ZERO_THRESH = 0.00000001;
   const double PI = M_PI;
   const double d1 = 0.1625;
@@ -197,4 +197,4 @@ namespace ur5ekin{
     }
     return num_sols;
   }
-}
+// }
