@@ -59,7 +59,7 @@ def main():
 	NUM=10
 	for i in range(NUM):
 		print "throwing ball %d"%(i)
-		x = -3+random.uniform(0,0.1)
+		x = -3.0+random.uniform(0,0.1)
 		y = random.uniform(-0.1,0.1)
 		# z = random.uniform(0,0.1)
 		z = 0.01

@@ -94,13 +94,13 @@ void balls_state_callback(const catchbot::LogicalCamConstPtr& msg){
 		double y_speed = (p2.y-p1.y)/dt;
 		double z_speed = (p2.z-p1.z)/dt - dt * 9.8 * 0.5;
 
-		double t = (-0.3-p2.x)/x_speed;
+		double t = (-0.45-p2.x)/x_speed;
 		// . . . p2.x + y_speed*t
 		// . . . p2.x + y_speed*t
 		// . . . p2.z + z_speed*t - 0.5*g*t*t
 		// . . . 1
 		double *T = new double[12];
-		cout<<t<<"-=-=-=-="<<x_speed<<"-=-=-=-="<<y_speed<<"-=-=-=-="<<z_speed<<endl;
+		// cout<<t<<"-=-=-=-="<<x_speed<<"-=-=-=-="<<y_speed<<"-=-=-=-="<<z_speed<<endl;
 		T[0]=-1;
 		T[1]=0;
 		T[2]=0;
@@ -112,7 +112,7 @@ void balls_state_callback(const catchbot::LogicalCamConstPtr& msg){
 		T[8]=0;
 		T[9]=0;
 		T[10]=1;
-		T[11]=p2.z + z_speed*t - 0.5*9.8*t*t;
+		T[11]=p2.z + z_speed*t - 0.5*9.8*t*t - 0.7;
 		// T[12]=0;
 		for(int i=0;i<12;i++){
 			cout<<T[i]<<" ";
