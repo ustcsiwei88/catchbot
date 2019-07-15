@@ -20,19 +20,19 @@ Lock = threading.Lock()
 
 balls_arr = []
 
-
 def logical_cam():
 	'''
 	Balls position publisher
 	'''
-	global balls_arr
+	global balls_arr, cam_time
 	pub = rospy.Publisher('/catchbot/logical_cam', LogicalCam, queue_size=10)
 	rate = rospy.Rate(10)
 	while not rospy.is_shutdown():
 		# TODO: CREATE MODELSTATE ARRAY
 		Lock.acquire()
 		logical_cam_info = LogicalCam()
-		logical_cam_info.timestamp = rospy.Time.now()
+		logical_cam_info.timestamp = cam_time
+		# print "here"
 		for item in balls_arr:
 			logical_cam_info.ball_positions.append(item)
 		pub.publish(logical_cam_info)
@@ -43,10 +43,11 @@ def logical_cam():
 def model_states_callback(data):
 	'''
 	'''
-	global balls_arr
+	global balls_arr, cam_time
 	Lock.acquire()
 	l = len(data.name)
 	balls_arr=[]
+	cam_time = rospy.Time.now()
 	for i in range(l):
 		if data.name[i].startswith('ball'):
 			balls_arr.append(data.pose[i].position)
@@ -81,7 +82,7 @@ if __name__ == '__main__':
 	spawn_model = rospy.ServiceProxy('/gazebo/spawn_sdf_model', SpawnModel)
 	set_model_state = rospy.ServiceProxy('/gazebo/set_model_state', SetModelState)
 	delete_model = rospy.ServiceProxy('/gazebo/delete_model', DeleteModel)
-
+	cam_time=rospy.Time.now()
 	rospy.Subscriber('/gazebo/model_states', ModelStates, model_states_callback)
 	orient = Quaternion(0,0,0,1)
 	
