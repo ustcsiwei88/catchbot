@@ -125,33 +125,53 @@ void balls_state_callback(const catchbot::LogicalCamConstPtr& msg){
 		double y_speed = (p2.y-p1.y)/dt;
 		double z_speed = (p2.z-p1.z)/dt - dt * 9.8 * 0.5;
 
-		double t = (-0.50-p2.x)/x_speed;
+		
+
+		double t = (-0.60-p2.x)/x_speed;
+		double v_x = x_speed;
+		double v_z = z_speed - 9.8 * t;
+		double v = sqrt(v_x*v_x + v_z*v_z);
+		cout << v_x << "===" << v_z << "===" << v << endl;
 		// . . . p2.x + y_speed*t
 		// . . . p2.x + y_speed*t
 		// . . . p2.z + z_speed*t - 0.5*g*t*t
 		// . . . 1
 		double *T = new double[12];
 		// cout<<t<<"-=-=-=-="<<x_speed<<"-=-=-=-="<<y_speed<<"-=-=-=-="<<z_speed<<endl;
-		T[0]=-1;
+		T[0]=-v_x/v;
 		T[1]=0;
-		T[2]=0;
+		T[2]=-v_z/v;
 		T[3]=p2.x + x_speed*t;
 		T[4]=0;
-		T[5]=1;
+		T[5]=-1;
 		T[6]=0;
 		T[7]=p2.y + y_speed*t;
-		T[8]=0;
+		T[8]=-v_z/v;
 		T[9]=0;
-		T[10]=1;
+		T[10]=v_x/v;
 		T[11]=p2.z + z_speed*t - 0.5*9.8*t*t - 0.7;
+		// T[0]=0;
+		// T[1]=1;
+		// T[2]=0;
+		// T[3]=p2.x + x_speed*t;
+		// T[4]=-1;
+		// T[5]=0;
+		// T[6]=0;
+		// T[7]=p2.y + y_speed*t;
+		// T[8]=0;
+		// T[9]=0;
+		// T[10]=1;
+		// T[11]=p2.z + z_speed*t - 0.5*9.8*t*t - 0.7;
 		// T[12]=0;
 		// for(int i=0;i<12;i++){
 		// 	cout<<T[i]<<" ";
 		// }
 		cout<<endl;
 		double *q_sol=new double[48];
-		cout<<inverse(T, q_sol, 0)<<"------"<<endl;
-		if(inverse(T, q_sol, 0)){
+		int sol_num = inverse(T, q_sol, 0);
+		cout<< sol_num <<"------"<<endl;
+		if(sol_num){
+			cout << "+++++" << *q_sol << endl;
 			vector<double> tmp(6);
 			for(int i=0;i<6;i++){
 				tmp[i]=q_sol[i];

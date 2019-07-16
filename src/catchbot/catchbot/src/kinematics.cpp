@@ -13,7 +13,7 @@
   const double a3 = -0.3922;
   const double d4 = 0.1333;
   const double d5 = 0.0997;
-  const double d6 = 0.0996 + 0.145;
+  const double d6 = 0.0996 + 0.16;
   int SIGN(double x) {
     return (x > 0) - (x < 0);
   }
