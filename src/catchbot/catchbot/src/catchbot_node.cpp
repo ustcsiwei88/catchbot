@@ -49,6 +49,24 @@ void send_arm_to_state(vector<double>& q, double t=0.1){
 	arm_joint_trajectory_publisher.publish(msg);
 }
 
+void send_arm_to_states(vector<vector<double>>& q, vector<double> t){
+	trajectory_msgs::JointTrajectory msg;
+	msg.joint_names.clear();
+	msg.joint_names.emplace_back("shoulder_pan_joint");
+	msg.joint_names.emplace_back("shoulder_lift_joint");
+	msg.joint_names.emplace_back("elbow_joint");
+	msg.joint_names.emplace_back("wrist_1_joint");
+	msg.joint_names.emplace_back("wrist_2_joint");
+	msg.joint_names.emplace_back("wrist_3_joint");
+
+	msg.points.resize(q.size());
+	for(int i=0;i<q.size();i++){
+		msg.points[i].positions = q[i];
+		msg.points[i].time_from_start = ros::Duration(t[i]);
+	}
+	arm_joint_trajectory_publisher.publish(msg);
+}
+
 void send_gripper_to_state(double stage, double t=0.1){
 	trajectory_msgs::JointTrajectory msg;
 	msg.joint_names.clear();
@@ -58,6 +76,19 @@ void send_gripper_to_state(double stage, double t=0.1){
 	msg.points[0].positions.push_back(stage);
 
 	msg.points[0].time_from_start = ros::Duration(t);
+	gripper_joint_trajectory_publisher.publish(msg);
+}
+
+void send_gripper_to_states(vector<double> stage, vector<double> t){
+	trajectory_msgs::JointTrajectory msg;
+	msg.joint_names.clear();
+	msg.joint_names.emplace_back("gripper_finger1_joint");
+
+	msg.points.resize(stage.size());
+	for(int i=0;i<stage.size();i++){
+		msg.points[i].positions.push_back(stage[i]);
+		msg.points[i].time_from_start = ros::Duration(t[i]);
+	}
 	gripper_joint_trajectory_publisher.publish(msg);
 }
 
@@ -94,7 +125,7 @@ void balls_state_callback(const catchbot::LogicalCamConstPtr& msg){
 		double y_speed = (p2.y-p1.y)/dt;
 		double z_speed = (p2.z-p1.z)/dt - dt * 9.8 * 0.5;
 
-		double t = (-0.45-p2.x)/x_speed;
+		double t = (-0.50-p2.x)/x_speed;
 		// . . . p2.x + y_speed*t
 		// . . . p2.x + y_speed*t
 		// . . . p2.z + z_speed*t - 0.5*g*t*t
@@ -114,9 +145,9 @@ void balls_state_callback(const catchbot::LogicalCamConstPtr& msg){
 		T[10]=1;
 		T[11]=p2.z + z_speed*t - 0.5*9.8*t*t - 0.7;
 		// T[12]=0;
-		for(int i=0;i<12;i++){
-			cout<<T[i]<<" ";
-		}
+		// for(int i=0;i<12;i++){
+		// 	cout<<T[i]<<" ";
+		// }
 		cout<<endl;
 		double *q_sol=new double[48];
 		cout<<inverse(T, q_sol, 0)<<"------"<<endl;
@@ -125,7 +156,9 @@ void balls_state_callback(const catchbot::LogicalCamConstPtr& msg){
 			for(int i=0;i<6;i++){
 				tmp[i]=q_sol[i];
 			}
-			send_arm_to_state(tmp, 0.1);
+			send_arm_to_state(tmp, t/2);
+			// send_arm_to_states(vector<vector<double>>{tmp, tmp, tmp}, vector<double>{t/2, t*3/2, 2*t});
+			send_gripper_to_states(vector<double>{0.12,0.52,0.52,0.12}, vector<double>{t/2,t,t*3/2,t*2});
 		}
 		delete[] T,q_sol;
 	}
