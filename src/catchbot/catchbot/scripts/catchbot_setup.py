@@ -61,21 +61,21 @@ def main():
 		if i % 3 == 0:
 			print "throwing ball %d"%(i)
 			x = -9.0+random.uniform(0,0.1)
-			y = random.uniform(-0.1,0.1)
+			y = 4.5 + random.uniform(-0.1,0.1)
 			# z = random.uniform(0,0.1)
 			z = 0.01
 			spawn_model('ball_'+str(i), sdff, "", Pose(Point(x=x,y=y,z=z), orient ), "world")
 			# time.sleep(0.4)
-			set_model_state(ModelState('ball_'+str(i), Pose(Point(x=x,y=y,z=z), orient ), Twist(Vector3(7, 0, 7),Vector3(0,0,0)), "world"))
+			set_model_state(ModelState('ball_'+str(i), Pose(Point(x=x,y=y,z=z), orient ), Twist(Vector3(7, -3.5, 7),Vector3(0,0,0)), "world"))
 		elif i % 3 ==1:
 			print "throwing ball %d"%(i)
 			x = -6.0+random.uniform(0,0.1)
-			y = random.uniform(-0.1,0.1)
+			y = -3 + random.uniform(-0.1,0.1)
 			# z = random.uniform(0,0.1)
 			z = 0.5
 			spawn_model('ball_'+str(i), sdff, "", Pose(Point(x=x,y=y,z=z), orient ), "world")
 			# time.sleep(0.4)
-			set_model_state(ModelState('ball_'+str(i), Pose(Point(x=x,y=y,z=z), orient ), Twist(Vector3(4, 0, 7),Vector3(0,0,0)), "world"))
+			set_model_state(ModelState('ball_'+str(i), Pose(Point(x=x,y=y,z=z), orient ), Twist(Vector3(4, 2, 7),Vector3(0,0,0)), "world"))
 		else:
 			print "throwing ball %d"%(i)
 			x = -3.0+random.uniform(0,0.1)
