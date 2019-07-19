@@ -8,12 +8,12 @@
 // namespace ur5ekin{
   const double ZERO_THRESH = 0.00000001;
   const double PI = M_PI;
-  const double d1 = 0.1625;
+  const double d1 = 0.1625 + 0.8;
   const double a2 = -0.425;
   const double a3 = -0.3922;
   const double d4 = 0.1333;
   const double d5 = 0.0997;
-  const double d6 = 0.0996 + 0.16;
+  const double d6 = 0.0996 + 0.145;
   int SIGN(double x) {
     return (x > 0) - (x < 0);
   }

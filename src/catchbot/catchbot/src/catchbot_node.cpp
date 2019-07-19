@@ -149,7 +149,7 @@ void balls_state_callback(const catchbot::LogicalCamConstPtr& msg){
 		T[8]=-v_z/v;
 		T[9]=0;
 		T[10]=v_x/v;
-		T[11]=p2.z + z_speed*t - 0.5*9.8*t*t - 0.7;
+		T[11]=p2.z + z_speed*t - 0.5*9.8*t*t;
 		// T[0]=0;
 		// T[1]=1;
 		// T[2]=0;
