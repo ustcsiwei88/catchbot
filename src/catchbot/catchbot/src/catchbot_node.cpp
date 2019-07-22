@@ -22,6 +22,8 @@
 
 #include"catchbot/LogicalCam.h"
 
+#define ABS(x) (x)>=0 ? (x):(-(x))
+
 ros::Publisher arm_joint_trajectory_publisher;
 ros::Publisher gripper_joint_trajectory_publisher;
 using namespace std;
@@ -102,11 +104,49 @@ vector<ball_pose > ball_poses;
 vector<double> arm_joints_state;
 double gripper_state;
 
+void q_switch(double *a, double *b){
+	double *t = new double[6];
+	for(int i = 0; i<6; i++){
+		t[i] = a[i];
+		a[i] = b[i];
+		b[i] = t[i];
+	}
+	delete t;
+}
+void q_sort_based_on_max_rotation(double *q_sol, double *q_sol_max_rotation, int sol_num){
+	for(int j = 0; j<sol_num-1; j++){
+		int min=j;
+		int ptr=j;
+		for(; ptr<sol_num;ptr++){
+			if(q_sol_max_rotation[ptr]<q_sol_max_rotation[min]) min = ptr;
+		}
+		q_switch(q_sol+6*j,q_sol+6*min);
+		double t = q_sol_max_rotation[j];
+		q_sol_max_rotation[min] = q_sol_max_rotation[j];
+		q_sol_max_rotation[j] = q_sol_max_rotation[min];
+	}
+	for(int i = 0;i<sol_num;i++){
+		for(int j = 0;j<6;j++){
+			cout << q_sol[i*6+j] << " ";
+		}
+		cout << endl;
+	}
+}
+void q_sort(double *q_sol, double *q_sol_, int sol_num){
+	double *q_sol_max_rotation = new double[sol_num];
+	for(int i = 0; i<sol_num;i++){
+		q_sol_max_rotation[i] = q_sol_[6*i];
+		for(int j = 0;j<6;j++){
+			if(q_sol_[6*i+j] > q_sol_max_rotation[i]) q_sol_max_rotation[i] = q_sol_[6*i+j];
+		}
+	}
+	q_sort_based_on_max_rotation(q_sol,q_sol_max_rotation,sol_num);
+}
 
 void balls_state_callback(const catchbot::LogicalCamConstPtr& msg){
 	// 0.1s sim sec
 	// cout<<*msg<<endl;
-	cout<<ball_poses.size()<<endl;
+	//cout<<ball_poses.size()<<endl;
 	if(msg->ball_positions.size()==0){
 		ball_poses.clear();
 		return;
@@ -119,7 +159,7 @@ void balls_state_callback(const catchbot::LogicalCamConstPtr& msg){
 	if(ball_poses.size()==7){
 		auto p1 = ball_poses[1].second;
 		auto p2 = ball_poses[6].second;
-		cout<<p1<<endl<<p2<<endl;
+		//cout<<p1<<endl<<p2<<endl;
 		double dt = (ball_poses[6].first - ball_poses[1].first).toSec();
 		double x_speed = (p2.x-p1.x)/dt;
 		double y_speed = (p2.y-p1.y)/dt;
@@ -127,13 +167,13 @@ void balls_state_callback(const catchbot::LogicalCamConstPtr& msg){
 
 		
 
-		double t = (-0.60-p2.x)/x_speed;
+		double t = (0.60-p2.x)/x_speed;
 		double v_x = x_speed;
 		double v_y = y_speed;
 		double v_z = z_speed - 9.8 * t;
 		double v_xy = sqrt(v_x*v_x + v_y*v_y);
 		double v = sqrt(v_x*v_x + v_y*v_y + v_z*v_z);
-		cout << v_x << "===" << v_z << "===" << v << endl;
+		//cout << v_x << "===" << v_z << "===" << v << endl;
 		// . . . p2.x + y_speed*t
 		// . . . p2.x + y_speed*t
 		// . . . p2.z + z_speed*t - 0.5*g*t*t
@@ -169,7 +209,27 @@ void balls_state_callback(const catchbot::LogicalCamConstPtr& msg){
 		int sol_num = inverse(T, q_sol, 0);
 		cout<< sol_num <<"------"<<endl;
 		if(sol_num){
-			cout << "+++++" << *q_sol << endl;
+			double *q_sol_ = new double[48];
+			for(int i=0; i<6*sol_num;i++) q_sol_[i] = ABS(q_sol[i]-arm_joints_state[i%6]);
+			cout << "before" << endl;
+			cout << arm_joints_state[0] << " " << arm_joints_state[1] << " " << arm_joints_state[2] << " " << arm_joints_state[3] << " " << arm_joints_state[4] << " " << arm_joints_state[5] << endl;
+			cout << endl;
+			for(int i = 0;i<sol_num;i++){
+				for(int j = 0;j<6;j++){
+					cout << q_sol[i*6+j] << " ";
+				}
+				cout << endl;
+			}
+			cout << "q rotate" << endl;
+			for(int i = 0;i<sol_num;i++){
+				for(int j = 0;j<6;j++){
+					cout << q_sol_[i*6+j] << " ";
+				}
+				cout << endl;
+			}
+			cout << "sorted " << endl;
+			q_sort(q_sol,q_sol_,sol_num);
+			//cout << "+++++" << *q_sol << endl;
 			vector<double> tmp(6);
 			for(int i=0;i<6;i++){
 				tmp[i]=q_sol[i];
@@ -183,6 +243,13 @@ void balls_state_callback(const catchbot::LogicalCamConstPtr& msg){
 
 }
 
+
+
+
+
+
+
+
 int cnt=0;
 void arm_state_callback(const sensor_msgs::JointStateConstPtr& msg){
 	
@@ -192,6 +259,7 @@ void arm_state_callback(const sensor_msgs::JointStateConstPtr& msg){
 	arm_joints_state[3] = msg->position[4];
 	arm_joints_state[4] = msg->position[5];
 	arm_joints_state[5] = msg->position[6];
+	//cout << arm_joints_state[0] << " " << arm_joints_state[1] << " " << arm_joints_state[2] << " " << arm_joints_state[3] << " " << arm_joints_state[4] << " " << arm_joints_state[5] << endl;
 
 	gripper_state = msg->position[1];
 }
