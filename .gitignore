@@ -106,3 +106,6 @@ venv.bak/
 
 #catkin
 .catkin_workspace
+
+#vscode
+.vscode/
