@@ -156,18 +156,19 @@ void balls_state_callback(const catchbot::LogicalCamConstPtr& msg){
 		return;
 	}
 	ball_poses.emplace_back(msg->timestamp, msg->ball_positions[0]);
-	if(ball_poses.size()==7){
+	if(ball_poses.size()==6){
 		auto p1 = ball_poses[1].second;
-		auto p2 = ball_poses[6].second;
+		auto p2 = ball_poses[5].second;
 		//cout<<p1<<endl<<p2<<endl;
-		double dt = (ball_poses[6].first - ball_poses[1].first).toSec();
+		double dt = (ball_poses[5].first - ball_poses[1].first).toSec();
 		double x_speed = (p2.x-p1.x)/dt;
 		double y_speed = (p2.y-p1.y)/dt;
 		double z_speed = (p2.z-p1.z)/dt - dt * 9.8 * 0.5;
-
 		
+		cout << "Flying time 1:" << dt << endl;
 
-		double t = (0.60-p2.x)/x_speed;
+		double t = (-0.65-p2.x)/x_speed;
+		cout << "Flying time 2:" << t << endl;
 		double v_x = x_speed;
 		double v_y = y_speed;
 		double v_z = z_speed - 9.8 * t;
@@ -180,18 +181,6 @@ void balls_state_callback(const catchbot::LogicalCamConstPtr& msg){
 		// . . . 1
 		double *T = new double[12];
 		// cout<<t<<"-=-=-=-="<<x_speed<<"-=-=-=-="<<y_speed<<"-=-=-=-="<<z_speed<<endl;
-		// T[0]=-v_x/v;
-		// T[1]=0;
-		// T[2]=-v_z/v;
-		// T[3]=p2.x + x_speed*t;
-		// T[4]=0;
-		// T[5]=-1;
-		// T[6]=0;
-		// T[7]=p2.y + y_speed*t;
-		// T[8]=-v_z/v;
-		// T[9]=0;
-		// T[10]=v_x/v;
-		// T[11]=p2.z + z_speed*t - 0.5*9.8*t*t;
 		T[0]=-v_x/v;
 		T[1]=-v_y/v_xy;
 		T[2]=(v_z*v_x)/(v*v_xy);
@@ -214,27 +203,37 @@ void balls_state_callback(const catchbot::LogicalCamConstPtr& msg){
 			cout << "before" << endl;
 			cout << arm_joints_state[0] << " " << arm_joints_state[1] << " " << arm_joints_state[2] << " " << arm_joints_state[3] << " " << arm_joints_state[4] << " " << arm_joints_state[5] << endl;
 			cout << endl;
-			for(int i = 0;i<sol_num;i++){
-				for(int j = 0;j<6;j++){
-					cout << q_sol[i*6+j] << " ";
-				}
-				cout << endl;
+			// for(int i = 0;i<sol_num;i++){
+			// 	for(int j = 0;j<6;j++){
+			// 		cout << q_sol[i*6+j] << " ";
+			// 	}
+			// 	cout << endl;
+			// }
+			// cout << "q rotate" << endl;
+			// for(int i = 0;i<sol_num;i++){
+			// 	for(int j = 0;j<6;j++){
+			// 		cout << q_sol_[i*6+j] << " ";
+			// 	}
+			// 	cout << endl;
+			// }
+			int i = 0;
+			for(int j = 0;j<6;j++){
+				cout << q_sol[i*6+j] << " ";
 			}
-			cout << "q rotate" << endl;
-			for(int i = 0;i<sol_num;i++){
-				for(int j = 0;j<6;j++){
-					cout << q_sol_[i*6+j] << " ";
-				}
-				cout << endl;
+			cout << endl;
+			for(int j = 0;j<6;j++){
+				cout << q_sol_[i*6+j] << " ";
 			}
-			cout << "sorted " << endl;
-			q_sort(q_sol,q_sol_,sol_num);
-			//cout << "+++++" << *q_sol << endl;
+			cout << endl;
+			cout << endl;
+			// cout << "sorted " << endl;
+			// q_sort(q_sol,q_sol_,sol_num);
+
 			vector<double> tmp(6);
 			for(int i=0;i<6;i++){
 				tmp[i]=q_sol[i];
 			}
-			send_arm_to_state(tmp, t/2);
+			send_arm_to_state(tmp, t/4);
 			// send_arm_to_states(vector<vector<double>>{tmp, tmp, tmp}, vector<double>{t/2, t*3/2, 2*t});
 			send_gripper_to_states(vector<double>{0.12,0.52,0.52,0.12}, vector<double>{t/2,t,t*3/2,t*2});
 		}
@@ -242,13 +241,6 @@ void balls_state_callback(const catchbot::LogicalCamConstPtr& msg){
 	}
 
 }
-
-
-
-
-
-
-
 
 int cnt=0;
 void arm_state_callback(const sensor_msgs::JointStateConstPtr& msg){
@@ -263,15 +255,6 @@ void arm_state_callback(const sensor_msgs::JointStateConstPtr& msg){
 
 	gripper_state = msg->position[1];
 }
-
-
-// void foo(){
-// 	while(1){
-// 		vector<double> q{1.57,0,0,0,0,0}; //elbow [-pi, pi], others[-2pi, 2pi]
-// 		send_arm_to_state(q);
-// 		send_gripper_to_state(0.56); //0 ~ 0.8
-// 	}
-// }
 
 
 int main(int argc, char** argv){
