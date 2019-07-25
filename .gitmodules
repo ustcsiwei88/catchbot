@@ -1,6 +1,7 @@
-[submodule "src/robotiq_85_gripper"]
-	path = src/robotiq_85_gripper
-	url = https://github.com/neka-nat/robotiq_85_gripper.git
 [submodule "src/universal_robot"]
 	path = src/universal_robot
 	url = https://github.com/ros-industrial/universal_robot
+	branch = melodic-devel
+[submodule "src/robotiq_85_gripper"]
+	path = src/robotiq_85_gripper
+	url = https://github.com/ustcsiwei88/robotiq_85_gripper
