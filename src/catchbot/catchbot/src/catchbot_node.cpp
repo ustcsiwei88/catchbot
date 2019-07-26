@@ -130,37 +130,62 @@ void balls_state_callback(const catchbot::LogicalCamConstPtr& msg){
 		// . . . p2.x + y_speed*t
 		// . . . p2.z + z_speed*t - 0.5*g*t*t
 		// . . . 1
-		double *T = new double[12];
+		double T[12]={0};
 		// cout<<t<<"-=-=-=-="<<x_speed<<"-=-=-=-="<<y_speed<<"-=-=-=-="<<z_speed<<endl;
-		T[0]=-1;
-		T[1]=0;
-		T[2]=0;
+		double vz, v, vxy;
+		
+		// vx = x_speed;
+		// vy = y_speed;
+		vz = z_speed - 9.8*t;
+		v = sqrt(x_speed*x_speed + y_speed*y_speed + vz*vz);
+
+		vxy = sqrt(x_speed*x_speed + y_speed*y_speed);
+
+		T[0]=-x_speed/v;
+		T[1]=-y_speed/v;
+		T[2]=-vz/v;
 		T[3]=p2.x + x_speed*t;
-		T[4]=0;
-		T[5]=1;
+		
+		T[4]=y_speed/vxy;
+		T[5]=-x_speed/vxy;
 		T[6]=0;
 		T[7]=p2.y + y_speed*t;
-		T[8]=0;
-		T[9]=0;
-		T[10]=1;
+
+		// Singularity issues? in case x_speed=0 && y_speed=0
+
+		T[8]=-x_speed * vz / (v * vxy);
+		T[9]=y_speed * vz / (v * vxy);
+		T[10]=vxy / v;
 		T[11]=p2.z + z_speed*t - 0.5*9.8*t*t - 0.7;
-		// T[12]=0;
-		// for(int i=0;i<12;i++){
-		// 	cout<<T[i]<<" ";
+
+		// for(int i=0;i<16;i++){
+		// 	cout<<T[i]<<", ";
+		// 	if(i%4==3)cout<<endl;
 		// }
-		cout<<endl;
-		double *q_sol=new double[48];
-		cout<<inverse(T, q_sol, 0)<<"------"<<endl;
-		if(inverse(T, q_sol, 0)){
+
+		// cout<<endl;
+		double q_sols[48];
+
+		int sol_num = inverse(T, q_sols, 0);
+		// cout<<sol_num<<"------"<<endl;
+		// for(int i=0;i<sol_num ;i++){
+		// 	for(int j=0;j<6;j++){
+		// 		cout<< q_sols[i*6 + j]<<' ';
+		// 	}
+		// 	cout<<endl;
+		// }
+		// cout<<endl;
+		if(sol_num){
 			vector<double> tmp(6);
 			for(int i=0;i<6;i++){
-				tmp[i]=q_sol[i];
+				tmp[i]=q_sols[i];
 			}
 			send_arm_to_state(tmp, t/2);
 			// send_arm_to_states(vector<vector<double>>{tmp, tmp, tmp}, vector<double>{t/2, t*3/2, 2*t});
-			send_gripper_to_states(vector<double>{0.12,0.52,0.52,0.12}, vector<double>{t/2,t,t*3/2,t*2});
+			// double t_remain = ros::Time::now() - ball_poses[6].first;
+			send_gripper_to_states(vector<double>{0.12,0.52,0.52,0.12}, vector<double>{t/2,t,t*2,t*3});
 		}
-		delete[] T,q_sol;
+		
 	}
 
 }
