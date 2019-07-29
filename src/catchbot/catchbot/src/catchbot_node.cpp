@@ -49,7 +49,7 @@ void send_arm_to_state(vector<double>& q, double t=0.1){
 	arm_joint_trajectory_publisher.publish(msg);
 }
 
-void send_arm_to_states(vector<vector<double>>& q, vector<double> t){
+void send_arm_to_states(const vector<vector<double>>& q, const vector<double>& t){
 	trajectory_msgs::JointTrajectory msg;
 	msg.joint_names.clear();
 	msg.joint_names.emplace_back("shoulder_pan_joint");
@@ -67,7 +67,7 @@ void send_arm_to_states(vector<vector<double>>& q, vector<double> t){
 	arm_joint_trajectory_publisher.publish(msg);
 }
 
-void send_gripper_to_state(double stage, double t=0.1){
+void send_gripper_to_state(const double stage, const double t=0.1){
 	trajectory_msgs::JointTrajectory msg;
 	msg.joint_names.clear();
 	msg.joint_names.emplace_back("gripper_finger1_joint");
@@ -79,7 +79,7 @@ void send_gripper_to_state(double stage, double t=0.1){
 	gripper_joint_trajectory_publisher.publish(msg);
 }
 
-void send_gripper_to_states(vector<double> stage, vector<double> t){
+void send_gripper_to_states(const vector<double>& stage, const vector<double>& t){
 	trajectory_msgs::JointTrajectory msg;
 	msg.joint_names.clear();
 	msg.joint_names.emplace_back("gripper_finger1_joint");
@@ -154,7 +154,7 @@ void balls_state_callback(const catchbot::LogicalCamConstPtr& msg){
 		// Singularity issues? in case x_speed=0 && y_speed=0
 
 		T[8]=-x_speed * vz / (v * vxy);
-		T[9]=y_speed * vz / (v * vxy);
+		T[9]=-y_speed * vz / (v * vxy);
 		T[10]=vxy / v;
 		T[11]=p2.z + z_speed*t - 0.5*9.8*t*t - 0.7;
 
@@ -180,10 +180,14 @@ void balls_state_callback(const catchbot::LogicalCamConstPtr& msg){
 			for(int i=0;i<6;i++){
 				tmp[i]=q_sols[i];
 			}
-			send_arm_to_state(tmp, t/2);
+			double t_arrival = t - (ros::Time::now() - ball_poses[6].first).toSec();
+			cout<<"t_arrival = "<<t_arrival<<endl;
+			send_arm_to_state(tmp, t_arrival/2);
 			// send_arm_to_states(vector<vector<double>>{tmp, tmp, tmp}, vector<double>{t/2, t*3/2, 2*t});
 			// double t_remain = ros::Time::now() - ball_poses[6].first;
-			send_gripper_to_states(vector<double>{0.12,0.52,0.52,0.12}, vector<double>{t/2,t,t*2,t*3});
+
+			send_gripper_to_states(vector<double>{0.12,0.42,0.42,0.12}, 
+				vector<double>{t_arrival/2,t_arrival,t_arrival*2,t_arrival*3});
 		}
 		
 	}

@@ -44,10 +44,11 @@ def model_states_callback(data):
 	'''
 	'''
 	global balls_arr, cam_time
+	cam_time = rospy.Time.now()
 	Lock.acquire()
 	l = len(data.name)
 	balls_arr=[]
-	cam_time = rospy.Time.now()
+	
 	for i in range(l):
 		if data.name[i].startswith('ball'):
 			balls_arr.append(data.pose[i].position)
@@ -59,15 +60,15 @@ def main():
 	NUM=10
 	for i in range(NUM):
 		print "throwing ball %d"%(i)
-		x = -3.0+random.uniform(0,0.1)
-		y = random.uniform(-0.1,0.1)
+		x = -6.0 + random.uniform(0,0.1)
+		y = 0 + random.uniform(-0.1,0.1)
 		# z = random.uniform(0,0.1)
-		z = 0.01
+		z = 0.02
 		spawn_model('ball_'+str(i), sdff, "", Pose(Point(x=x,y=y,z=z), orient ), "world")
 		# time.sleep(0.4)
-		set_model_state(ModelState('ball_'+str(i), Pose(Point(x=x,y=y,z=z), orient ), Twist(Vector3(2, 0, 7),Vector3(0,0,0)), "world"))
+		set_model_state(ModelState('ball_'+str(i), Pose(Point(x=x,y=y,z=z), orient ), Twist(Vector3(7, 0, 5),Vector3(0,0,0)), "world"))
 		time.sleep(6)
-		delete_model('ball_'+str(i))
+		# delete_model('ball_'+str(i))
 		time.sleep(3)
 	rospy.signal_shutdown("Fininshed Throwing")
 	# for i in range(NUM):
