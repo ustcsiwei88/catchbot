@@ -89,17 +89,17 @@ def main():
 		y = random.uniform(-5,5)
 		z = random.uniform(0,2)
 
-		t = 0.5 + random.uniform(-0.1,0.1)
-		v_x = (-0.65 - x) /t
+		t = 0.55 + random.uniform(-0.05,0.05)
+		v_x = (-0.7 - x)/t
 		v_y = (random.uniform(-0.5,0.5)-y)/t + random.uniform(-y/(10*t),y/(10*t))
 		v_z = (random.uniform(0.6,1.1) - z)/t + 0.5*9.8*t
 
 		spawn_model('ball_'+str(i), sdff, "", Pose(Point(x=x,y=y,z=z), orient ), "world")
 		set_model_state(ModelState('ball_'+str(i), Pose(Point(x=x,y=y,z=z), orient ), Twist(Vector3(v_x, v_y, v_z),Vector3(0,0,0)), "world"))
 
-		time.sleep(2)
+		time.sleep(3)
 		delete_model('ball_'+str(i))
-		time.sleep(1)
+		time.sleep(2)
 	rospy.signal_shutdown("Fininshed Throwing")
 	# for i in range(NUM):
 	# 	model_name='ball_' + str(i)

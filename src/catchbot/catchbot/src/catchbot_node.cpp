@@ -165,79 +165,104 @@ void balls_state_callback(const catchbot::LogicalCamConstPtr& msg){
 		double y_speed = (p2.y-p1.y)/dt;
 		double z_speed = (p2.z-p1.z)/dt - dt * 9.8 * 0.5;
 		
-		cout << "Flying time 1:" << dt << endl;
+		// cout << "Flying time 1:" << dt << endl;
 
-		double t = (-0.65-p2.x)/x_speed;
-		cout << "Flying time 2:" << t << endl;
-		double v_x = x_speed;
-		double v_y = y_speed;
-		double v_z = z_speed - 9.8 * t;
-		double v_xy = sqrt(v_x*v_x + v_y*v_y);
-		double v = sqrt(v_x*v_x + v_y*v_y + v_z*v_z);
-		//cout << v_x << "===" << v_z << "===" << v << endl;
-		// . . . p2.x + y_speed*t
-		// . . . p2.x + y_speed*t
-		// . . . p2.z + z_speed*t - 0.5*g*t*t
-		// . . . 1
-		double *T = new double[12];
-		// cout<<t<<"-=-=-=-="<<x_speed<<"-=-=-=-="<<y_speed<<"-=-=-=-="<<z_speed<<endl;
-		T[0]=-v_x/v;
-		T[1]=-v_y/v_xy;
-		T[2]=(v_z*v_x)/(v*v_xy);
-		T[3]=p2.x + x_speed*t;
-		T[4]=-v_y/v;
-		T[5]=v_x/v_xy;
-		T[6]=(v_y*v_z)/(v*v_xy);
-		T[7]=p2.y + y_speed*t;
-		T[8]=-v_z/v;
-		T[9]=0;
-		T[10]=-v_xy/v;
-		T[11]=p2.z + z_speed*t - 0.5*9.8*t*t;
-		cout<<endl;
-		double *q_sol=new double[48];
-		int sol_num = inverse(T, q_sol, 0);
-		cout<< sol_num <<"------"<<endl;
-		if(sol_num){
-			double *q_sol_ = new double[48];
-			for(int i=0; i<6*sol_num;i++) q_sol_[i] = ABS(q_sol[i]-arm_joints_state[i%6]);
-			cout << "before" << endl;
-			cout << arm_joints_state[0] << " " << arm_joints_state[1] << " " << arm_joints_state[2] << " " << arm_joints_state[3] << " " << arm_joints_state[4] << " " << arm_joints_state[5] << endl;
-			cout << endl;
-			// for(int i = 0;i<sol_num;i++){
-			// 	for(int j = 0;j<6;j++){
-			// 		cout << q_sol[i*6+j] << " ";
-			// 	}
-			// 	cout << endl;
-			// }
-			// cout << "q rotate" << endl;
-			// for(int i = 0;i<sol_num;i++){
-			// 	for(int j = 0;j<6;j++){
-			// 		cout << q_sol_[i*6+j] << " ";
-			// 	}
-			// 	cout << endl;
-			// }
-			int i = 0;
-			for(int j = 0;j<6;j++){
-				cout << q_sol[i*6+j] << " ";
+		double q_sol_final[8] = {0,0,0,0,0,0,0,0};
+		for(int i = 0; i <= 6; i++){
+			double t = (-0.5 - 0.05 * i - p2.x)/x_speed;
+			// cout << "Flying time 2:" << t << endl;
+			double v_x = x_speed;
+			double v_y = y_speed;
+			double v_z = z_speed - 9.8 * t;
+			double v_xy = sqrt(v_x*v_x + v_y*v_y);
+			double v = sqrt(v_x*v_x + v_y*v_y + v_z*v_z);
+			//cout << v_x << "===" << v_z << "===" << v << endl;
+			// . . . p2.x + y_speed*t
+			// . . . p2.x + y_speed*t
+			// . . . p2.z + z_speed*t - 0.5*g*t*t
+			// . . . 1
+			double *T = new double[12];
+			// cout<<t<<"-=-=-=-="<<x_speed<<"-=-=-=-="<<y_speed<<"-=-=-=-="<<z_speed<<endl;
+			T[0]=-v_x/v;
+			T[1]=-v_y/v_xy;
+			T[2]=(v_z*v_x)/(v*v_xy);
+			T[3]=p2.x + x_speed*t;
+			T[4]=-v_y/v;
+			T[5]=v_x/v_xy;
+			T[6]=(v_y*v_z)/(v*v_xy);
+			T[7]=p2.y + y_speed*t;
+			T[8]=-v_z/v;
+			T[9]=0;
+			T[10]=-v_xy/v;
+			T[11]=p2.z + z_speed*t - 0.5*9.8*t*t;
+			cout<<endl;
+			double *q_sol=new double[48];
+			int sol_num = inverse(T, q_sol, 0);
+			cout<< sol_num <<"------"<<endl;
+			
+			if(sol_num){
+				double *q_sol_ = new double[6];
+				for(int i=0; i<6;i++) 
+				{
+					q_sol_[i] = ABS(q_sol[i]-arm_joints_state[i]);
+					cout << q_sol_[i] << " ";
+				}
+				cout << endl;
+				// cout << "before" << endl;
+				// cout << arm_joints_state[0] << " " << arm_joints_state[1] << " " << arm_joints_state[2] << " " << arm_joints_state[3] << " " << arm_joints_state[4] << " " << arm_joints_state[5] << endl;
+				// cout << endl;
+				// for(int i = 0;i<sol_num;i++){
+				// 	for(int j = 0;j<6;j++){
+				// 		cout << q_sol[i*6+j] << " ";
+				// 	}
+				// 	cout << endl;
+				// }
+				// cout << "q rotate" << endl;
+				// for(int i = 0;i<sol_num;i++){
+				// 	for(int j = 0;j<6;j++){
+				// 		cout << q_sol_[i*6+j] << " ";
+				// 	}
+				// 	cout << endl;
+				// }
+				// int i = 0;
+				// for(int j = 0;j<6;j++){
+				// 	cout << q_sol[i*6+j] << " ";
+				// }
+				// cout << endl;
+				// for(int j = 0;j<6;j++){
+				// 	cout << q_sol_[i*6+j] << " ";
+				// }
+				// cout << endl;
+				// cout << endl;
+				// cout << "sorted " << endl;
+				// q_sort(q_sol,q_sol_,sol_num);
+				double q_sol_max = 0;
+				for(int i=0; i<6;i++){
+					if(q_sol_[i]>q_sol_max) q_sol_max = q_sol_[i];
+				} 
+				if(q_sol_final[6] == 0 || q_sol_final[6] > q_sol_max){
+					q_sol_final[6] = q_sol_max;
+					q_sol_final[7] = t;
+					for(int i = 0;i<6;i++){
+						q_sol_final[i] = q_sol[i];
+					}
+				}
+				
 			}
-			cout << endl;
-			for(int j = 0;j<6;j++){
-				cout << q_sol_[i*6+j] << " ";
-			}
-			cout << endl;
-			cout << endl;
-			// cout << "sorted " << endl;
-			// q_sort(q_sol,q_sol_,sol_num);
-
-			vector<double> tmp(6);
-			for(int i=0;i<6;i++){
-				tmp[i]=q_sol[i];
-			}
-			send_arm_to_state(tmp, t/4);
-			// send_arm_to_states(vector<vector<double>>{tmp, tmp, tmp}, vector<double>{t/2, t*3/2, 2*t});
-			send_gripper_to_states(vector<double>{0.12,0.52,0.52,0.12}, vector<double>{t/2,t,t*3/2,t*2});
+			delete[] T,q_sol;
 		}
-		delete[] T,q_sol;
+		cout << "1\n";
+		vector<double> tmp(6);
+		for(int i=0;i<6;i++){
+			tmp[i]=q_sol_final[i];
+			cout << q_sol_final[i] << " ";
+		}
+		cout << endl;
+		cout << q_sol_final[6]<< endl;
+		double t = q_sol_final[7];
+		send_arm_to_state(tmp, t/4);
+		// send_arm_to_states(vector<vector<double>>{tmp, tmp, tmp}, vector<double>{t/2, t*3/2, 2*t});
+		send_gripper_to_states(vector<double>{0.12,0.52,0.52,0.12}, vector<double>{t/2,t,t*3/2,t*2});			
 	}
 
 }
