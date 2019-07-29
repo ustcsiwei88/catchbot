@@ -186,7 +186,7 @@ void balls_state_callback(const catchbot::LogicalCamConstPtr& msg){
 			// send_arm_to_states(vector<vector<double>>{tmp, tmp, tmp}, vector<double>{t/2, t*3/2, 2*t});
 			// double t_remain = ros::Time::now() - ball_poses[6].first;
 
-			send_gripper_to_states(vector<double>{0.12,0.52,0.52,0.12}, 
+			send_gripper_to_states(vector<double>{0.12,0.67,0.67,0.12}, 
 				vector<double>{t_arrival/2,t_arrival,0.5+t_arrival*2,0.5+t_arrival*3});
 		}
 		
