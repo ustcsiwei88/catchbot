@@ -37,7 +37,10 @@ def logical_cam():
 			logical_cam_info.ball_positions.append(item)
 		pub.publish(logical_cam_info)
 		Lock.release()
-		rate.sleep()
+		try:
+			rate.sleep()
+		except rospy.exceptions.ROSInterruptException as e:
+			pass
 
 
 def model_states_callback(data):
@@ -57,16 +60,17 @@ def model_states_callback(data):
 def main():
 	f = open(os.path.join(rospack.get_path("catchbot"), 'models/ball/model.sdf'))
 	sdff = f.read()
-	NUM=10
+	NUM=100
 	for i in range(NUM):
 		print "throwing ball %d"%(i)
-		x = -4.0 + random.uniform(0,0.1)
-		y = 0 + random.uniform(-0.1,0.1)
+		x = -4.0 + random.uniform(0,0.2)
+		y = 0 + random.uniform(-0.2,0.2)
 		# z = random.uniform(0,0.1)
 		z = 0.02
 		spawn_model('ball_'+str(i), sdff, "", Pose(Point(x=x,y=y,z=z), orient ), "world")
 		# time.sleep(0.4)
-		set_model_state(ModelState('ball_'+str(i), Pose(Point(x=x,y=y,z=z), orient ), Twist(Vector3(3, 0, 6),Vector3(0,0,0)), "world"))
+		set_model_state(ModelState('ball_'+str(i), Pose(Point(x=x,y=y,z=z), orient ), 
+			Twist(Vector3(3+random.uniform(-0.5,0.5), 0, 6+random.uniform(-0.5,0.5)),Vector3(0,0,0)), "world"))
 		time.sleep(6)
 		delete_model('ball_'+str(i))
 		time.sleep(3)

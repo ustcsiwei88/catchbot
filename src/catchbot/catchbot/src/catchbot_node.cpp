@@ -20,6 +20,8 @@
 #include<trajectory_msgs/JointTrajectoryPoint.h>
 
 
+#define PI 3.1415926535
+
 #include"catchbot/LogicalCam.h"
 
 ros::Publisher arm_joint_trajectory_publisher;
@@ -29,7 +31,6 @@ using namespace std;
 
 void forward(const double* q, double* T);
 int inverse(const double* T, double* q_sols, double q6_des);
-
 
 
 void send_arm_to_state(vector<double>& q, double t=0.1){
@@ -125,7 +126,7 @@ void balls_state_callback(const catchbot::LogicalCamConstPtr& msg){
 		double y_speed = (p2.y-p1.y)/dt;
 		double z_speed = (p2.z-p1.z)/dt - dt * 9.8 * 0.5;
 
-		double t = (-0.50-p2.x)/x_speed;
+		double t = (-0.6-p2.x)/x_speed;
 		// . . . p2.x + y_speed*t
 		// . . . p2.x + y_speed*t
 		// . . . p2.z + z_speed*t - 0.5*g*t*t
@@ -175,10 +176,33 @@ void balls_state_callback(const catchbot::LogicalCamConstPtr& msg){
 		// 	cout<<endl;
 		// }
 		// cout<<endl;
+
 		if(sol_num){
+			// vector<int> tmp(sol_num);
+			// for(int i=0;i<n;i++){
+			// 	tmp[i]=i;
+			// }
+			auto cur_conf = arm_joints_state;
+			vector<double> tmp1(sol_num, 0);
+			int id=0;
+			for(int i=0;i<sol_num;i++){
+				for(int j=0;j<6;j++){
+					if(q_sols[i*6+j] - cur_conf[j] > PI){
+						q_sols[i*6+j] -= 2*PI;
+					}
+					else if(q_sols[i*6+j] - cur_conf[j] < -PI){
+						q_sols[i*6+j] += 2*PI;
+					}
+				}
+				for(int j=0;j<6;j++)
+					tmp1[i] = max(tmp1[i], fabs(cur_conf[j] - q_sols[i*6+j]));
+				if(tmp1[id] > tmp1[i]){
+					id=i;
+				}
+			}
 			vector<double> tmp(6);
 			for(int i=0;i<6;i++){
-				tmp[i]=q_sols[i];
+				tmp[i]=q_sols[i + id*6];
 			}
 			double t_arrival = t - (ros::Time::now() - ball_poses[6].first).toSec();
 			cout<<"t_arrival = "<<t_arrival<<endl;
@@ -186,8 +210,8 @@ void balls_state_callback(const catchbot::LogicalCamConstPtr& msg){
 			// send_arm_to_states(vector<vector<double>>{tmp, tmp, tmp}, vector<double>{t/2, t*3/2, 2*t});
 			// double t_remain = ros::Time::now() - ball_poses[6].first;
 
-			send_gripper_to_states(vector<double>{0.12,0.67,0.67,0.12}, 
-				vector<double>{t_arrival/2,t_arrival,0.5+t_arrival*2,0.5+t_arrival*3});
+			send_gripper_to_states({0.12,0.67,0.67,0.12}, 
+				{t_arrival/2,t_arrival,0.5+t_arrival*2,0.5+t_arrival*3});
 		}
 		
 	}
