@@ -28,10 +28,12 @@ include_directories(include ${catkin_INCLUDE_DIRS})
 
 add_compile_options(-std=c++14)
 add_executable(catchbot_node src/catchbot_node.cpp src/kinematics.cpp)
-
+add_executable(catchbot_air_friction src/catchbot_air_friction.cpp)
 # add_executable(catchbot_node src/catchbot_node.cpp)
 
 add_dependencies(catchbot_node ${catkin_EXPORTED_TARGETS})
+add_dependencies(catchbot_air_friction ${catkin_EXPORTED_TARGETS})
 
 target_link_libraries(catchbot_node ${catkin_LIBRARIES})
+target_link_libraries(catchbot_air_friction ${catkin_LIBRARIES})
 

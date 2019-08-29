@@ -97,8 +97,16 @@
           </contact>
         </surface>
       </collision>
+
     </link>
     <static>0</static>
     <allow_auto_disable>1</allow_auto_disable>
+  
+  <plugin name="air_friction" filename="libair_friction_plugin.so">
+    <bodyName>link_2</bodyName>
+    <topicName>/catchbot/air_friction</topicName>
+  </plugin>
+    
+  
   </model>
 </sdf>

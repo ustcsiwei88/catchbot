@@ -26,7 +26,7 @@ def logical_cam():
 	'''
 	global balls_arr, cam_time
 	pub = rospy.Publisher('/catchbot/logical_cam', LogicalCam, queue_size=10)
-	rate = rospy.Rate(120)
+	rate = rospy.Rate(60)
 	while not rospy.is_shutdown():
 		# TODO: CREATE MODELSTATE ARRAY
 		Lock.acquire()
@@ -58,32 +58,6 @@ def main():
 	sdff = f.read()
 	NUM=20
 	for i in range(NUM):
-		# if i % 3 == 0:
-		# 	print "throwing ball %d"%(i)
-		# 	x = -9.0+random.uniform(0,0.1)
-		# 	y = 4.5 + random.uniform(-0.1,0.1)
-		# 	z = random.uniform(0,0.7)
-			
-		# 	spawn_model('ball_'+str(i), sdff, "", Pose(Point(x=x,y=y,z=z), orient ), "world")
-		# 	# time.sleep(0.4)
-		# 	set_model_state(ModelState('ball_'+str(i), Pose(Point(x=x,y=y,z=z), orient ), Twist(Vector3(14, -7, 4),Vector3(0,0,0)), "world"))
-		# elif i % 3 ==1:
-		# 	print "throwing ball %d"%(i)
-		# 	x = -6.0+random.uniform(0,0.1)
-		# 	y = -3 + random.uniform(-0.1,0.1)
-		# 	z = random.uniform(0,0.6)
-		# 	spawn_model('ball_'+str(i), sdff, "", Pose(Point(x=x,y=y,z=z), orient ), "world")
-		# 	# time.sleep(0.4)
-		# 	set_model_state(ModelState('ball_'+str(i), Pose(Point(x=x,y=y,z=z), orient ), Twist(Vector3(8, 4, 4),Vector3(0,0,0)), "world"))
-		# else:
-		# 	print "throwing ball %d"%(i)
-		# 	x = -3.0+random.uniform(0,0.1)
-		# 	y = random.uniform(-0.1,0.1)
-		# 	z = random.uniform(0.2,0.7)
-		# 	spawn_model('ball_'+str(i), sdff, "", Pose(Point(x=x,y=y,z=z), orient ), "world")
-		# 	# time.sleep(0.4)
-		# 	set_model_state(ModelState('ball_'+str(i), Pose(Point(x=x,y=y,z=z), orient ), Twist(Vector3(4, 0, 4),Vector3(0,0,0)), "world"))
-		
 		print "throwing ball %d"%(i)
 		x = random.uniform(-3,-10)
 		y = random.uniform(-5,5)
@@ -101,9 +75,6 @@ def main():
 		delete_model('ball_'+str(i))
 		time.sleep(2)
 	rospy.signal_shutdown("Fininshed Throwing")
-	# for i in range(NUM):
-	# 	model_name='ball_' + str(i)
-	# 	delete_model(str(model_name))
 
 if __name__ == '__main__':
 	rospy.init_node('catchbot_setup')
