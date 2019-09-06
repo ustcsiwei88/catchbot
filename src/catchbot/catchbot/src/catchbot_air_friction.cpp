@@ -1,3 +1,7 @@
+// This is a node that subscribe the pose of the ball, 
+// calculate the air friction and finally publish it.
+// Created by Xinyu Cai
+
 #include<vector>
 #include<string>
 #include<deque>

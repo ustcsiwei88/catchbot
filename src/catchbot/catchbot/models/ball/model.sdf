@@ -102,8 +102,11 @@
     <static>0</static>
     <allow_auto_disable>1</allow_auto_disable>
   
+  <!-- Bind air_firction_plugin on the ball -->
   <plugin name="air_friction" filename="libair_friction_plugin.so">
+    <!-- The name of the link where the force is executed -->
     <bodyName>link_2</bodyName>
+    <!-- The topic name for the plugin to subscribe to receive data of force to be executed -->
     <topicName>/catchbot/air_friction</topicName>
   </plugin>
     
