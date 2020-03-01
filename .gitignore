@@ -106,3 +106,8 @@ venv.bak/
 
 #catkin
 .catkin_workspace
+
+
+*.obj
+*.pdb
+*.ilk
