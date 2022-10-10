@@ -10,6 +10,8 @@ find_package(catkin REQUIRED COMPONENTS
 	message_generation
 	control_msgs
 	trajectory_msgs)
+find_package(ur_rtde REQUIRED)
+
 add_message_files(
 	FILES
 	LogicalCam.msg
@@ -33,5 +35,5 @@ add_executable(catchbot_node src/catchbot_node.cpp src/kinematics.cpp)
 
 add_dependencies(catchbot_node ${catkin_EXPORTED_TARGETS} catchbot_generate_messages_cpp)
 
-target_link_libraries(catchbot_node ${catkin_LIBRARIES})
+target_link_libraries(catchbot_node ${catkin_LIBRARIES} ur_rtde::rtde)
 

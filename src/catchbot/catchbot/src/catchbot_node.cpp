@@ -6,27 +6,32 @@
 #include<cmath>
 #include<map>
 #include<set>
-
 #include<thread>
-
 #include<ros/ros.h>
-
 #include<geometry_msgs/Point.h>
+#include<geometry_msgs/PoseStamped.h>
 #include<sensor_msgs/JointState.h>
 #include<trajectory_msgs/JointTrajectory.h>
-
 #include<control_msgs/JointTrajectoryControllerState.h>
-
 #include<trajectory_msgs/JointTrajectoryPoint.h>
 
-
 #define PI 3.1415926535
-
 #include"catchbot/LogicalCam.h"
+
+#include <ur_rtde/rtde_control_interface.h>
+#include <ur_rtde/rtde_receive_interface.h>
+#define IP_ADDR "172.19.97.157"
+
+
+using namespace std;
+using namespace ur_rtde;
 
 ros::Publisher arm_joint_trajectory_publisher;
 ros::Publisher gripper_joint_trajectory_publisher;
-using namespace std;
+vector<double> q_default{1.5031, -1.1882, 1.7874, 2.1394, -1.4560, 0};
+
+RTDEControlInterface rtde_control(IP_ADDR);
+
 // using namespace ur5ekin;
 
 void forward(const double* q, double* T);
@@ -34,22 +39,16 @@ int inverse(const double* T, double* q_sols, double q6_des);
 
 
 void send_arm_to_state(vector<double>& q, double t=0.1){
-	trajectory_msgs::JointTrajectory msg;
-	msg.joint_names.clear();
-	msg.joint_names.emplace_back("shoulder_pan_joint");
-	msg.joint_names.emplace_back("shoulder_lift_joint");
-	msg.joint_names.emplace_back("elbow_joint");
-	msg.joint_names.emplace_back("wrist_1_joint");
-	msg.joint_names.emplace_back("wrist_2_joint");
-	msg.joint_names.emplace_back("wrist_3_joint");
-
-	msg.points.resize(1);
-	msg.points[0].positions = q;
-
-	msg.points[0].time_from_start = ros::Duration(t);
-	arm_joint_trajectory_publisher.publish(msg);
+	cout << "Moving to ";
+	for(double d: q) cout << d << ' '; cout << endl;
+	
+	cout << "Moving to degree ";
+	for(double d: q) cout << d / M_PI * 180 << ' '; cout << endl;
+	
+	rtde_control.moveJ(q, 0.3, 0.2); // vel acc
 }
 
+/*
 void send_arm_to_states(const vector<vector<double>>& q, const vector<double>& t){
 	trajectory_msgs::JointTrajectory msg;
 	msg.joint_names.clear();
@@ -67,8 +66,10 @@ void send_arm_to_states(const vector<vector<double>>& q, const vector<double>& t
 	}
 	arm_joint_trajectory_publisher.publish(msg);
 }
+*/
 
 void send_gripper_to_state(const double stage, const double t=0.1){
+	/*
 	trajectory_msgs::JointTrajectory msg;
 	msg.joint_names.clear();
 	msg.joint_names.emplace_back("gripper_finger1_joint");
@@ -78,6 +79,7 @@ void send_gripper_to_state(const double stage, const double t=0.1){
 
 	msg.points[0].time_from_start = ros::Duration(t);
 	gripper_joint_trajectory_publisher.publish(msg);
+	*/
 }
 
 void send_gripper_to_states(const vector<double>& stage, const vector<double>& t){
@@ -104,71 +106,80 @@ vector<double> arm_joints_state;
 double gripper_state;
 
 
-void balls_state_callback(const catchbot::LogicalCamConstPtr& msg){
+void balls_state_callback(const geometry_msgs::PoseStampedConstPtr& msg){
 	// 0.1s sim sec
 	// cout<<*msg<<endl;
-	cout<<ball_poses.size()<<endl;
-	if(msg->ball_positions.size()==0){
-		ball_poses.clear();
-		return;
-	}
-	else if(msg->ball_positions[0].z < 0.1){
-		ball_poses.clear();
-		return;
-	}
-	ball_poses.emplace_back(msg->timestamp, msg->ball_positions[0]);
+	// cout<<ball_poses.size()<<endl;
+	// if(msg->ball_positions.size()==0){
+	// 	ball_poses.clear();
+	// 	return;
+	// }
+	// else if(msg->ball_positions[0].z < 0.1){
+	// 	ball_poses.clear();
+	// 	return;
+	// }
+	if(msg->pose.position.x < 0.5) return;
+	double x = msg->pose.position.x;
+	double y = msg->pose.position.y;
+	double z = msg->pose.position.z;
+	ball_poses.emplace_back(msg->header.stamp, geometry_msgs::Point());
+	// coarsely change into robot frame
+	ball_poses.back().second.x = -y + .2;
+	ball_poses.back().second.y = x - 5.89; 
+	ball_poses.back().second.z = z - 0.8;
+	
 	if(ball_poses.size()==7){
 		auto p1 = ball_poses[1].second;
 		auto p2 = ball_poses[6].second;
-		cout<<p1<<endl<<p2<<endl;
+		// cout << p1 << endl << p2 << endl;
 		double dt = (ball_poses[6].first - ball_poses[1].first).toSec();
-		double x_speed = (p2.x-p1.x)/dt;
-		double y_speed = (p2.y-p1.y)/dt;
-		double z_speed = (p2.z-p1.z)/dt - dt * 9.8 * 0.5;
+		double x_speed = (p2.x-p1.x) / dt;
+		double y_speed = (p2.y-p1.y) / dt;
+		double z_speed = (p2.z-p1.z) / dt - dt * 9.8 * 0.5;
 
-		double t = (-0.6-p2.x)/x_speed;
+		double t = (-0.55 - p2.y)/y_speed;
+		
 		// . . . p2.x + y_speed*t
 		// . . . p2.x + y_speed*t
 		// . . . p2.z + z_speed*t - 0.5*g*t*t
 		// . . . 1
 		double T[12]={0};
-		// cout<<t<<"-=-=-=-="<<x_speed<<"-=-=-=-="<<y_speed<<"-=-=-=-="<<z_speed<<endl;
+		cout<< "t = " << t << ", x_peed = " << x_speed << ", y_speed = " << y_speed
+			<< ", z_speed = "<< z_speed <<endl;
 		double vz, v, vxy;
 		
 		// vx = x_speed;
 		// vy = y_speed;
-		vz = z_speed - 9.8*t;
+		vz = z_speed - 9.8 * t;
 		v = sqrt(x_speed*x_speed + y_speed*y_speed + vz*vz);
 
 		vxy = sqrt(x_speed*x_speed + y_speed*y_speed);
 
 		T[0]=-x_speed/v;
-		T[1]=-y_speed/v;
-		T[2]=-vz/v;
+		T[4]=-y_speed/v;
+		T[8]=-vz/v;
 		T[3]=p2.x + x_speed*t;
 		
-		T[4]=y_speed/vxy;
+		T[1]=y_speed/vxy;
 		T[5]=-x_speed/vxy;
-		T[6]=0;
+		T[9]=0;
 		T[7]=p2.y + y_speed*t;
 
-		// Singularity issues? in case x_speed=0 && y_speed=0
-
-		T[8]=-x_speed * vz / (v * vxy);
-		T[9]=-y_speed * vz / (v * vxy);
+		T[2]=-x_speed * vz / (v * vxy);
+		T[6]=-y_speed * vz / (v * vxy);
 		T[10]=vxy / v;
-		T[11]=p2.z + z_speed*t - 0.5*9.8*t*t - 0.7;
+		T[11]=p2.z + z_speed*t - 0.5*9.8*t*t;
 
-		// for(int i=0;i<16;i++){
-		// 	cout<<T[i]<<", ";
-		// 	if(i%4==3)cout<<endl;
-		// }
+		for(int i=0;i<12;i++){
+			cout<<T[i]<<", ";
+			if(i%4==3)cout<<endl;
+		}
 
 		// cout<<endl;
 		double q_sols[48];
 
 		int sol_num = inverse(T, q_sols, 0);
-		// cout<<sol_num<<"------"<<endl;
+		cout << "Solution count " << sol_num << endl;
 		// for(int i=0;i<sol_num ;i++){
 		// 	for(int j=0;j<6;j++){
 		// 		cout<< q_sols[i*6 + j]<<' ';
@@ -183,6 +194,7 @@ void balls_state_callback(const catchbot::LogicalCamConstPtr& msg){
 			// 	tmp[i]=i;
 			// }
 			auto cur_conf = arm_joints_state;
+			cur_conf = q_default; // use default for now
 			vector<double> tmp1(sol_num, 0);
 			int id=0;
 			for(int i=0;i<sol_num;i++){
@@ -194,16 +206,17 @@ void balls_state_callback(const catchbot::LogicalCamConstPtr& msg){
 						q_sols[i*6+j] += 2*PI;
 					}
 				}
-				for(int j=0;j<6;j++)
+				for(int j=0;j<3;j++)
 					tmp1[i] = max(tmp1[i], fabs(cur_conf[j] - q_sols[i*6+j]));
 				if(tmp1[id] > tmp1[i]){
 					id=i;
 				}
 			}
 			vector<double> tmp(6);
-			for(int i=0;i<6;i++){
+			for(int i=0; i<6; i++){
 				tmp[i]=q_sols[i + id*6];
 			}
+			cout << "min diff = " << tmp1[id] << endl;
 			double t_arrival = t - (ros::Time::now() - ball_poses[6].first).toSec();
 			cout<<"t_arrival = "<<t_arrival<<endl;
 			send_arm_to_state(tmp, t_arrival/2);
@@ -219,18 +232,24 @@ void balls_state_callback(const catchbot::LogicalCamConstPtr& msg){
 }
 
 int cnt=0;
-void arm_state_callback(const sensor_msgs::JointStateConstPtr& msg){
+// void arm_state_callback(const sensor_msgs::JointStateConstPtr& msg){
 	
-	arm_joints_state[0] = msg->position[3];
-	arm_joints_state[1] = msg->position[2];
-	arm_joints_state[2] = msg->position[0];
-	arm_joints_state[3] = msg->position[4];
-	arm_joints_state[4] = msg->position[5];
-	arm_joints_state[5] = msg->position[6];
+// 	arm_joints_state[0] = msg->position[3];
+// 	arm_joints_state[1] = msg->position[2];
+// 	arm_joints_state[2] = msg->position[0];
+// 	arm_joints_state[3] = msg->position[4];
+// 	arm_joints_state[4] = msg->position[5];
+// 	arm_joints_state[5] = msg->position[6];
 
-	gripper_state = msg->position[1];
+// 	gripper_state = msg->position[1];
+// }
+void arm_state_callback(){
+	RTDEReceiveInterface rtde_receive(IP_ADDR);
+	while(1){
+		arm_joints_state = rtde_receive.getActualQ();
+		this_thread::sleep_for(0.002s);
+	}
 }
-
 
 // void foo(){
 // 	while(1){
@@ -244,14 +263,18 @@ void arm_state_callback(const sensor_msgs::JointStateConstPtr& msg){
 int main(int argc, char** argv){
 	ros::init(argc,argv,"catchbot_node");
 	ros::NodeHandle node;
+	cout << "Catch bot started" << endl;
 	arm_joints_state.resize(6);
 	arm_joint_trajectory_publisher = node.advertise<trajectory_msgs::JointTrajectory>("/arm_controller/command", 10);
 	gripper_joint_trajectory_publisher = node.advertise<trajectory_msgs::JointTrajectory>("/gripper_controller/command", 10);
-	ros::Subscriber sub_cam = node.subscribe("/catchbot/logical_cam", 10, balls_state_callback);
-	ros::Subscriber sub_arm = node.subscribe("/joint_states", 10, arm_state_callback);
-	vector<double> q{1.57,0,0,0,0,0}; //elbow [-pi, pi], others[-2pi, 2pi]
-	send_arm_to_state(q);
-	send_gripper_to_state(0.56); //0 ~ 0.8
+	// ros::Subscriber sub_cam = node.subscribe("/catchbot/logical_cam", 10, balls_state_callback);
+	ros::Subscriber sub_cam = node.subscribe("/vrpn_client_node/RigidBody01/pose", 10, balls_state_callback);
+	// ros::Subscriber sub_arm = node.subscribe("/joint_states", 10, arm_state_callback);
+	thread(arm_state_callback);
+	// vector<double> q{1.5031, -1.1882, 1.7874, 2.1394, -1.4560, 0}; //elbow [-pi, pi], others[-2pi, 2pi]
+	// rtde_control = RTDEControlInterface (IP_ADDR);
+	send_arm_to_state(q_default);
+	send_gripper_to_state(0.56); // 0 ~ 0.8
 	// thread first(foo);
 	ros::spin();
 	return 0;
