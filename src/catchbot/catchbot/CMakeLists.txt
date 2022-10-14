@@ -27,8 +27,8 @@ catkin_package()
 # install(DIRECTORY config DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
 
 include_directories(include ${catkin_INCLUDE_DIRS})
-
-add_compile_options(-std=c++14)
+set(CMAKE_BUILD_TYPE "Release")
+add_compile_options(-std=c++17)
 add_executable(catchbot_node src/catchbot_node.cpp src/kinematics.cpp)
 
 # add_executable(catchbot_node src/catchbot_node.cpp)
