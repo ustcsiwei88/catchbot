@@ -46,7 +46,7 @@ void arm_state_callback(){
 		mtx.lock();
 		arm_joints_state = rtde_receive.getActualQ();
 		mtx.unlock();
-		this_thread::sleep_for(0.01s);
+		this_thread::sleep_for(0.005s);
 	}
 }
 
@@ -57,7 +57,7 @@ void send_arm_to_state(vector<double>& q, double t=0.1){
 	cout << "Moving to degree ";
 	for(double d: q) cout << d / M_PI * 180 << ' '; cout << endl;
 	
-	rtde_control.moveJ(q, 0.3, 0.2); // vel acc
+	rtde_control.moveJ(q, 0.4, 0.4); // vel acc
 }
 
 inline double sm_step(double s, double g){
@@ -82,7 +82,7 @@ void servo_arm_to_state(vector<double>& q, double t=0.1){
 	// cout << "Servoing to degree ";
 	// for(double d: q) cout << d / M_PI * 180 << ' '; cout << endl;
 
-	rtde_control.servoJ(q, 0.4, 0.4, 1. / 120.0, 0.1, 300); // vel acc lookahead_time gain
+	rtde_control.servoJ(q, 1, 1, 1. / 120.0, 0.1, 300); // vel acc lookahead_time gain
 }
 
 
