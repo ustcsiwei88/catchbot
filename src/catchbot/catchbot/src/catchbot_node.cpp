@@ -20,16 +20,17 @@
 
 #include <ur_rtde/rtde_control_interface.h>
 #include <ur_rtde/rtde_receive_interface.h>
-#define IP_ADDR "172.19.97.157"
+#define IP_ADDR "10.0.1.16"
+#define RATE 240.0
 
-#define JUST_FOLLOW
+// #define JUST_FOLLOW
 
 using namespace std;
 using namespace ur_rtde;
 
 ros::Publisher arm_joint_trajectory_publisher;
 ros::Publisher gripper_joint_trajectory_publisher;
-vector<double> q_default{1.5031, -1.1882, 1.7874, 2.1394, -1.4560, 0};
+vector<double> q_default{0, -1.1882, 1.7874, 2.1394, -1.4560, 0};
 
 RTDEControlInterface rtde_control(IP_ADDR);
 
@@ -60,12 +61,14 @@ void send_arm_to_state(vector<double>& q, double t=0.1){
 	rtde_control.moveJ(q, 0.4, 0.4); // vel acc
 }
 
+#define GAP 0.2
+
 inline double sm_step(double s, double g){
 	if(s < g){
-		if(g > s + .04) return s + .04;
+		if(g > s + GAP) return s + GAP;
 		else return g;
 	}else{
-		if(g < s - .04) return s - .04;
+		if(g < s - GAP) return s - GAP;
 		else return g;
 	}
 }
@@ -82,7 +85,7 @@ void servo_arm_to_state(vector<double>& q, double t=0.1){
 	// cout << "Servoing to degree ";
 	// for(double d: q) cout << d / M_PI * 180 << ' '; cout << endl;
 
-	rtde_control.servoJ(q, 1, 1, 1. / 120.0, 0.1, 300); // vel acc lookahead_time gain
+	rtde_control.servoJ(q, 2, 2, 1. / RATE, 0.1, 300); // vel acc lookahead_time gain
 }
 
 
@@ -161,9 +164,15 @@ void balls_state_callback(const geometry_msgs::PoseStampedConstPtr& msg){
 	double z = msg->pose.position.z;
 	ball_poses.emplace_back(msg->header.stamp, geometry_msgs::Point());
 	// coarsely change into robot frame
-	ball_poses.back().second.x = -y + .2;
-	ball_poses.back().second.y = x - 5.89; 
-	ball_poses.back().second.z = z - 0.8;
+	// at spring 
+	// ball_poses.back().second.x = -y + .2;
+	// ball_poses.back().second.y = x - 5.89; 
+	// ball_poses.back().second.z = z - 0.8;
+	
+	// at hill 122
+	ball_poses.back().second.x = -y - 0.33;
+	ball_poses.back().second.y = x + 0.035; 
+	ball_poses.back().second.z = z;
 	
 	if(ball_poses.size() >= 7){
 		auto p1 = ball_poses[1].second;
@@ -192,20 +201,20 @@ void balls_state_callback(const geometry_msgs::PoseStampedConstPtr& msg){
 
 		// vxy = sqrt(x_speed*x_speed + y_speed*y_speed);
 
-		// just let it point towards y neg
-		T[0] = 0;
-		T[4] = -1;
+		// just let it point towards x neg
+		T[0] = -1;
+		T[4] = 0;
 		T[8] = 0;
-		T[3] = clamp(p2.x, -0.4, 0.4);
+		T[3] = -0.65;
 		
 		T[1] = 0;
 		T[5] = 0;
 		T[9] = 1;
 		// T[7] = p2.y;
-		T[7] = -0.65;
+		T[7] = clamp(p2.y, -0.4, 0.4);
 
-		T[2] = -1;
-		T[6] = 0;
+		T[2] = 0;
+		T[6] = 1;
 		T[10]= 0;
 		T[11]= clamp(p2.z, 0.2, 0.7); 
 		// if(p2.z < 0.2) return;
@@ -218,7 +227,7 @@ void balls_state_callback(const geometry_msgs::PoseStampedConstPtr& msg){
 		double q_sols[48];
 
 		int sol_num = inverse(T, q_sols, 0);
-		cout << "Solution count " << sol_num << endl;
+		// cout << "Solution count " << sol_num << endl;
 		// for(int i=0;i<sol_num ;i++){
 		// 	for(int j=0;j<6;j++){
 		// 		cout<< q_sols[i*6 + j]<<' ';
@@ -285,15 +294,21 @@ void balls_state_callback(const geometry_msgs::PoseStampedConstPtr& msg){
 	// 	ball_poses.clear();
 	// 	return;
 	// }
-	if(msg->pose.position.x < 0.5) return;
+	if()
 	double x = msg->pose.position.x;
 	double y = msg->pose.position.y;
 	double z = msg->pose.position.z;
 	ball_poses.emplace_back(msg->header.stamp, geometry_msgs::Point());
 	// coarsely change into robot frame
-	ball_poses.back().second.x = -y + .2;
-	ball_poses.back().second.y = x - 5.89; 
-	ball_poses.back().second.z = z - 0.8;
+	// at spring 
+	// ball_poses.back().second.x = -y + .2;
+	// ball_poses.back().second.y = x - 5.89; 
+	// ball_poses.back().second.z = z - 0.8;
+	
+	// at hill 122
+	ball_poses.back().second.x = -y - 0.33;
+	ball_poses.back().second.y = x + 0.035; 
+	ball_poses.back().second.z = z;
 	
 	if(ball_poses.size()==7){
 		auto p1 = ball_poses[1].second;
@@ -304,7 +319,8 @@ void balls_state_callback(const geometry_msgs::PoseStampedConstPtr& msg){
 		double y_speed = (p2.y-p1.y) / dt;
 		double z_speed = (p2.z-p1.z) / dt - dt * 9.8 * 0.5;
 
-		double t = (-0.55 - p2.y)/y_speed;
+		// double t = (-0.55 - p2.y)/y_speed;
+		double t = (-0.55 - p2.x)/x_speed;
 		
 		// . . . p2.x + y_speed*t
 		// . . . p2.x + y_speed*t
@@ -385,15 +401,15 @@ void balls_state_callback(const geometry_msgs::PoseStampedConstPtr& msg){
 			for(int i=0; i<6; i++){
 				tmp[i]=q_sols[i + id*6];
 			}
-			cout << "min diff = " << tmp1[id] << endl;
-			double t_arrival = t - (ros::Time::now() - ball_poses[6].first).toSec();
-			cout<<"t_arrival = "<<t_arrival<<endl;
-			send_arm_to_state(tmp, t_arrival/2);
+			// cout << "min diff = " << tmp1[id] << endl;
+			// double t_arrival = t - (ros::Time::now() - ball_poses[6].first).toSec();
+			// cout<<"t_arrival = "<<t_arrival<<endl;
+			send_arm_to_state(tmp);
 			// send_arm_to_states(vector<vector<double>>{tmp, tmp, tmp}, vector<double>{t/2, t*3/2, 2*t});
 			// double t_remain = ros::Time::now() - ball_poses[6].first;
 
-			send_gripper_to_states({0.12,0.67,0.67,0.12}, 
-				{t_arrival/2,t_arrival,0.5+t_arrival*2,0.5+t_arrival*3});
+			// send_gripper_to_states({0.12,0.67,0.67,0.12}, 
+			// 	{t_arrival/2,t_arrival,0.5+t_arrival*2,0.5+t_arrival*3});
 		}
 		
 	}
@@ -433,7 +449,7 @@ int main(int argc, char** argv){
 	gripper_joint_trajectory_publisher = node.advertise<trajectory_msgs::JointTrajectory>("/gripper_controller/command", 10);
 	// ros::Subscriber sub_cam = node.subscribe("/catchbot/logical_cam", 10, balls_state_callback);
 #ifdef JUST_FOLLOW
-	ros::Subscriber sub_cam = node.subscribe("/vrpn_client_node/RigidBody02/pose", 10, balls_state_callback);
+	ros::Subscriber sub_cam = node.subscribe("/vrpn_client_node/RigidBody002/pose", 10, balls_state_callback);
 #else
 	ros::Subscriber sub_cam = node.subscribe("/vrpn_client_node/RigidBody01/pose", 10, balls_state_callback);
 #endif
