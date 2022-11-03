@@ -20,8 +20,8 @@
 
 #include <ur_rtde/rtde_control_interface.h>
 #include <ur_rtde/rtde_receive_interface.h>
-#define IP_ADDR "10.0.1.16"
-#define RATE 240.0
+#define IP_ADDR "192.168.1.16"
+#define RATE 120
 
 // #define JUST_FOLLOW
 
@@ -58,7 +58,7 @@ void send_arm_to_state(vector<double>& q, double t=0.1){
 	cout << "Moving to degree ";
 	for(double d: q) cout << d / M_PI * 180 << ' '; cout << endl;
 	
-	rtde_control.moveJ(q, 0.4, 0.4); // vel acc
+	rtde_control.moveJ(q, 1.0, 1.0); // vel acc
 }
 
 #define GAP 0.2
@@ -294,7 +294,8 @@ void balls_state_callback(const geometry_msgs::PoseStampedConstPtr& msg){
 	// 	ball_poses.clear();
 	// 	return;
 	// }
-	if()
+	
+	static bool thrown = false;
 	double x = msg->pose.position.x;
 	double y = msg->pose.position.y;
 	double z = msg->pose.position.z;
@@ -309,31 +310,64 @@ void balls_state_callback(const geometry_msgs::PoseStampedConstPtr& msg){
 	ball_poses.back().second.x = -y - 0.33;
 	ball_poses.back().second.y = x + 0.035; 
 	ball_poses.back().second.z = z;
+	if(ball_poses.back().second.x < -2.5) {
+		ball_poses.pop_back(); return;
+	}else if(ball_poses.back().second.x > -0.7) {
+		thrown = true;
+		ball_poses.pop_back(); // return;
+	}else if(thrown){
+		ball_poses.pop_back(); // return;
+	}
 	
-	if(ball_poses.size()==7){
-		auto p1 = ball_poses[1].second;
-		auto p2 = ball_poses[6].second;
-		// cout << p1 << endl << p2 << endl;
-		double dt = (ball_poses[6].first - ball_poses[1].first).toSec();
-		double x_speed = (p2.x-p1.x) / dt;
-		double y_speed = (p2.y-p1.y) / dt;
-		double z_speed = (p2.z-p1.z) / dt - dt * 9.8 * 0.5;
+	const int Step_Size = 10;
+	const double g = 9.80;
+
+	if(ball_poses.size() >= Step_Size){
+		// use the past 20 steps
+		
+		double sum_xt = 0, sum_x = 0;
+		double sum_yt = 0, sum_y = 0;
+		double sum_zt = 0, sum_z = 0;
+		double sum_t = 0, sum_tt = 0;
+
+		for (int st = ball_poses.size() - Step_Size, i=0; i < Step_Size; i++){
+			double t = (ball_poses[st + i].first - ball_poses[st].first).toSec();
+			double x = ball_poses[st + i].second.x;
+			double y = ball_poses[st + i].second.y;
+			double z = ball_poses[st + i].second.z + 0.5 * g * t * t;
+			// cout << "x y z " << x << " " << y << " " << "z " << ball_poses[st + i].second.z << endl;
+			sum_t += t; sum_tt += t * t;
+			sum_x += x; sum_xt += t * x;
+			sum_y += y; sum_yt += t * y;
+			sum_z += z; sum_zt += t * z;
+		}
+
+		double x_speed = (sum_xt * Step_Size - sum_x * sum_t) / (Step_Size * sum_tt - sum_t * sum_t);
+		double x0 = (sum_x - x_speed * sum_t) / Step_Size;
+		
+		double y_speed = (sum_yt * Step_Size - sum_y * sum_t) / (Step_Size * sum_tt - sum_t * sum_t);
+		double y0 = (sum_y - y_speed * sum_t) / Step_Size;
+		
+		double z_speed = (sum_zt * Step_Size - sum_z * sum_t) / (Step_Size * sum_tt - sum_t * sum_t);
+		double z0 = (sum_z - z_speed * sum_t) / Step_Size;
+
+		// double z_speed = (p2.z-p1.z) / dt - dt * g * 0.5;
 
 		// double t = (-0.55 - p2.y)/y_speed;
-		double t = (-0.55 - p2.x)/x_speed;
+		double t = (-0.55 - x0) / x_speed;
 		
 		// . . . p2.x + y_speed*t
 		// . . . p2.x + y_speed*t
 		// . . . p2.z + z_speed*t - 0.5*g*t*t
 		// . . . 1
 		double T[12]={0};
-		cout<< "t = " << t << ", x_peed = " << x_speed << ", y_speed = " << y_speed
-			<< ", z_speed = "<< z_speed <<endl;
+		// cout<< "t = " << t << ", x_speed = " << x_speed << ", y_speed = " << y_speed
+		// 	<< ", z_speed = "<< z_speed <<endl;
 		double vz, v, vxy;
 		
 		// vx = x_speed;
 		// vy = y_speed;
-		vz = z_speed - 9.8 * t;
+		vz = z_speed - 9.80 * t;
 		v = sqrt(x_speed*x_speed + y_speed*y_speed + vz*vz);
 
 		vxy = sqrt(x_speed*x_speed + y_speed*y_speed);
@@ -341,17 +375,19 @@ void balls_state_callback(const geometry_msgs::PoseStampedConstPtr& msg){
 		T[0]=-x_speed/v;
 		T[4]=-y_speed/v;
 		T[8]=-vz/v;
-		T[3]=p2.x + x_speed*t;
-		
+		T[3]=x0 + x_speed*t;
+
 		T[1]=y_speed/vxy;
 		T[5]=-x_speed/vxy;
 		T[9]=0;
-		T[7]=p2.y + y_speed*t;
-
+		T[7]=y0 + y_speed*t;
+		T[7] = clamp(T[7], -0.4, 0.4);
+		
 		T[2]=-x_speed * vz / (v * vxy);
 		T[6]=-y_speed * vz / (v * vxy);
 		T[10]=vxy / v;
-		T[11]=p2.z + z_speed*t - 0.5*9.8*t*t;
+		T[11]=z0 + z_speed*t - 0.5*9.8*t*t;
+		T[11]= clamp(T[11], 0.2, 0.7); 
 
 		for(int i=0;i<12;i++){
 			cout<<T[i]<<", ";
@@ -404,7 +440,9 @@ void balls_state_callback(const geometry_msgs::PoseStampedConstPtr& msg){
 			// cout << "min diff = " << tmp1[id] << endl;
 			// double t_arrival = t - (ros::Time::now() - ball_poses[6].first).toSec();
 			// cout<<"t_arrival = "<<t_arrival<<endl;
-			send_arm_to_state(tmp);
+			// send_arm_to_state(tmp);
+			// exit(1);
+			servo_arm_to_state(tmp);
 			// send_arm_to_states(vector<vector<double>>{tmp, tmp, tmp}, vector<double>{t/2, t*3/2, 2*t});
 			// double t_remain = ros::Time::now() - ball_poses[6].first;
 
@@ -449,9 +487,9 @@ int main(int argc, char** argv){
 	gripper_joint_trajectory_publisher = node.advertise<trajectory_msgs::JointTrajectory>("/gripper_controller/command", 10);
 	// ros::Subscriber sub_cam = node.subscribe("/catchbot/logical_cam", 10, balls_state_callback);
 #ifdef JUST_FOLLOW
-	ros::Subscriber sub_cam = node.subscribe("/vrpn_client_node/RigidBody002/pose", 10, balls_state_callback);
+	ros::Subscriber sub_cam = node.subscribe("/vrpn_client_node/RigidBody/pose", 10, balls_state_callback);
 #else
-	ros::Subscriber sub_cam = node.subscribe("/vrpn_client_node/RigidBody01/pose", 10, balls_state_callback);
+	ros::Subscriber sub_cam = node.subscribe("/vrpn_client_node/RigidBody/pose", 10, balls_state_callback);
 #endif
 	// ros::Subscriber sub_arm = node.subscribe("/joint_states", 10, arm_state_callback);
 	thread t1(arm_state_callback);
