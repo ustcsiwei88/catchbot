@@ -312,12 +312,12 @@ void balls_state_callback(const Point& msg, const double t){
 	// ball_poses.back().second.z = z - 0.8;
 	
 	// at hill 122
-	ball_poses.back().second.x = -y - 0.33;
-	ball_poses.back().second.y = x + 0.035; 
+	ball_poses.back().second.x = -y - 0.36;
+	ball_poses.back().second.y = x + 0.03; 
 	ball_poses.back().second.z = z;
-	if(ball_poses.back().second.x < -2.7) {
+	if(ball_poses.back().second.x < -2.7 || ball_poses.back().second.z > 1.4) {
 		ball_poses.pop_back(); return;
-	}else if(ball_poses.back().second.x > -0.7 || ball_poses.back().second.z > 1.4) {
+	}else if(ball_poses.back().second.x > -0.7) {
 		thrown = true;
 		ball_poses.pop_back(); // return;
 	}else if(thrown){
@@ -326,8 +326,8 @@ void balls_state_callback(const Point& msg, const double t){
 	
 	
 	int Step_Size = 20;
-	const int maxStep_Size = 20;
-	const int minStep_Size = 7;
+	const int maxStep_Size = 25;
+	const int minStep_Size = 10;
 	
 	const double g = 9.80;
 
