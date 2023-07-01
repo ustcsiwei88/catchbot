@@ -11,12 +11,12 @@ UR5e with robotiq 2 finger gripper on ROS Melodic in simulation
 
 Open Gazebo simulation
 
-```roslaunch catchbot\_gazebo catchbot\_gazebo.launch```
+```roslaunch catchbot_gazebo catchbot_gazebo.launch```
 
 Open catchbot_node for catching node
 
-```rosrun catchbot catchbot\_node```
+```rosrun catchbot catchbot_node```
 
 Run script for throwing ball
 
-```rosrun catchbot catchbot\_setup.py```
+```rosrun catchbot catchbot_setup.py```
